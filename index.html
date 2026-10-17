@@ -1,0 +1,2375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WanderWise AI — Find the Place That Feels Like You.</title>
+  
+  <!-- Fonts: Playfair Display & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome 6 Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <!-- MapLibre GL CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" />
+
+  <style>
+    :root {
+      --primary-dark: #0d2e24;
+      --primary-mid: #164e3c;
+      --primary-emerald: #10b981;
+      --accent-lime: #84cc16;
+      --accent-lime-light: #a3e635;
+      --sand-bg: #fdfbf7;
+      --sand-card: #f7f4ed;
+      --surface-white: #ffffff;
+      --text-main: #1c2e28;
+      --text-muted: #52665e;
+      --border-subtle: #e6e2d8;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+      --shadow-soft: 0 10px 30px -5px rgba(13, 46, 36, 0.08);
+      --shadow-hover: 0 20px 35px -8px rgba(13, 46, 36, 0.16);
+      --shadow-card: 0 4px 20px -2px rgba(15, 56, 42, 0.08);
+      --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--sand-bg);
+      color: var(--text-main);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, .font-serif {
+      font-family: 'Playfair Display', serif;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
+
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ----------------------------------------------------
+       Navigation Bar
+    ---------------------------------------------------- */
+    .navbar {
+      background: var(--surface-white);
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+    }
+    .nav-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .brand-logo i {
+      color: var(--primary-mid);
+      font-size: 1.5rem;
+    }
+    .brand-logo span span {
+      color: var(--accent-lime);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      list-style: none;
+    }
+    .nav-link {
+      font-weight: 500;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      transition: var(--transition);
+      position: relative;
+    }
+    .nav-link:hover, .nav-link.active {
+      color: var(--primary-dark);
+      font-weight: 600;
+    }
+    .nav-link.active::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--primary-mid);
+      border-radius: 2px;
+    }
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .btn-search-icon {
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      padding: 8px;
+      border-radius: 50%;
+      transition: var(--transition);
+    }
+    .btn-search-icon:hover {
+      color: var(--primary-dark);
+      background: var(--sand-card);
+    }
+    .btn-login {
+      padding: 9px 20px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      background: transparent;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      transition: var(--transition);
+    }
+    .btn-login:hover {
+      border-color: var(--primary-dark);
+      background: var(--sand-card);
+    }
+    .btn-signup {
+      padding: 9px 22px;
+      background: var(--primary-mid);
+      color: var(--surface-white);
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: var(--transition);
+    }
+    .btn-signup:hover {
+      background: var(--primary-dark);
+      box-shadow: 0 4px 12px rgba(22, 78, 60, 0.25);
+    }
+
+    /* ----------------------------------------------------
+       Split Hero Section
+    ---------------------------------------------------- */
+    .hero-section {
+      position: relative;
+      background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=2000&q=85') center center / cover no-repeat;
+      padding: 80px 0 100px;
+      min-height: 640px;
+      display: flex;
+      align-items: center;
+    }
+    .hero-natural-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(13, 46, 36, 0.88) 0%, rgba(13, 46, 36, 0.60) 48%, rgba(13, 46, 36, 0.22) 80%, rgba(13, 46, 36, 0.08) 100%),
+                  linear-gradient(180deg, rgba(13, 46, 36, 0.40) 0%, transparent 40%, rgba(13, 46, 36, 0.50) 100%);
+      pointer-events: none;
+    }
+    .hero-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 48px;
+      align-items: center;
+    }
+    .hero-eyebrow {
+      display: inline-block;
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 2.2px;
+      font-weight: 700;
+      color: var(--accent-lime-light);
+      margin-bottom: 14px;
+    }
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 700;
+      line-height: 1.12;
+      color: var(--surface-white);
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
+    }
+    .hero-title .highlight-lime {
+      color: var(--accent-lime-light);
+      font-style: italic;
+    }
+    .hero-desc {
+      font-size: 1.05rem;
+      color: #e2ece7;
+      max-width: 520px;
+      margin-bottom: 34px;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .btn-hero-primary {
+      padding: 13px 28px;
+      background: var(--accent-lime);
+      color: var(--primary-dark);
+      border-radius: var(--radius-full);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: var(--transition);
+      box-shadow: 0 4px 15px rgba(132, 204, 22, 0.35);
+    }
+    .btn-hero-primary:hover {
+      background: var(--accent-lime-light);
+      transform: translateY(-2px);
+    }
+    .btn-hero-secondary {
+      padding: 13px 28px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(8px);
+      color: var(--surface-white);
+      border-radius: var(--radius-full);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: var(--transition);
+    }
+    .btn-hero-secondary:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: #ffffff;
+    }
+
+    /* ----------------------------------------------------
+       AI Trip Planner Card
+    ---------------------------------------------------- */
+    .planner-card {
+      background: var(--surface-white);
+      border-radius: var(--radius-lg);
+      padding: 30px;
+      box-shadow: 0 20px 45px -10px rgba(7, 36, 25, 0.22);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+    }
+    .planner-header {
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .planner-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary-mid);
+      font-weight: 700;
+      font-size: 1.25rem;
+      font-family: 'Playfair Display', serif;
+    }
+    .planner-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .planner-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .planner-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .planner-field.full {
+      grid-column: span 2;
+    }
+    .planner-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .select-wrap, .input-wrap {
+      position: relative;
+    }
+    .select-wrap i, .input-wrap i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--primary-mid);
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+    .planner-input, .planner-select {
+      width: 100%;
+      padding: 10px 14px 10px 38px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: #faf9f6;
+      font-family: inherit;
+      font-size: 0.88rem;
+      color: var(--text-main);
+      transition: var(--transition);
+      appearance: none;
+    }
+    .planner-input:focus, .planner-select:focus {
+      border-color: var(--primary-mid);
+      background: var(--surface-white);
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(22, 78, 60, 0.1);
+    }
+    .pref-checkboxes {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 12px;
+      margin-top: 4px;
+    }
+    .pref-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.8rem;
+      color: var(--text-main);
+      cursor: pointer;
+      user-select: none;
+    }
+    .pref-checkbox-label input {
+      accent-color: var(--primary-mid);
+      width: 15px;
+      height: 15px;
+    }
+    .btn-planner-submit {
+      width: 100%;
+      padding: 13px;
+      background: var(--primary-mid);
+      color: var(--surface-white);
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 16px;
+      transition: var(--transition);
+      box-shadow: 0 4px 14px rgba(22, 78, 60, 0.2);
+    }
+    .btn-planner-submit:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+    }
+
+    /* ----------------------------------------------------
+       Section Wrappers & Titles
+    ---------------------------------------------------- */
+    .section-wrap {
+      padding: 56px 0;
+    }
+    .section-header {
+      margin-bottom: 28px;
+    }
+    .section-title {
+      font-size: 1.85rem;
+      color: var(--primary-dark);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .section-sub {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    /* ----------------------------------------------------
+       Category Strip
+    ---------------------------------------------------- */
+    .category-pills {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scrollbar-width: thin;
+    }
+    .category-pill {
+      background: var(--surface-white);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      padding: 9px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--text-main);
+      white-space: nowrap;
+      transition: var(--transition);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+    .category-pill:hover, .category-pill.active {
+      border-color: var(--primary-mid);
+      background: var(--sand-card);
+      color: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+    .cat-icon-circle {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+    .cat-nature { background: #e8f5e9; color: #2e7d32; }
+    .cat-beach { background: #e1f5fe; color: #0288d1; }
+    .cat-mountain { background: #ede7f6; color: #673ab7; }
+    .cat-heritage { background: #fff3e0; color: #f57c00; }
+    .cat-adventure { background: #fbe9e7; color: #d84315; }
+    .cat-culture { background: #fce4ec; color: #c2185b; }
+    .cat-surprise { background: #e0f2f1; color: #00796b; }
+
+    /* ----------------------------------------------------
+       Destinations Grid & Cards
+    ---------------------------------------------------- */
+    .destinations-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 22px;
+    }
+    .destination-card {
+      background: var(--surface-white);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .destination-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-hover);
+      border-color: #cbd5e1;
+    }
+    .card-img-wrap {
+      position: relative;
+      height: 180px;
+      overflow: hidden;
+    }
+    .card-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+    .destination-card:hover .card-img-wrap img {
+      transform: scale(1.05);
+    }
+    .card-tag {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(4px);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .card-fav-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.92);
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .card-fav-btn:hover, .card-fav-btn.active {
+      color: #e11d48;
+      background: #ffffff;
+      transform: scale(1.1);
+    }
+    .card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex-grow: 1;
+    }
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+    }
+    .card-location {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 12px;
+    }
+    .card-meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      padding-top: 12px;
+      border-top: 1px dashed var(--border-subtle);
+      margin-top: auto;
+    }
+    .rating-badge {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+      color: var(--primary-dark);
+    }
+    .rating-badge i {
+      color: #eab308;
+      font-size: 0.75rem;
+    }
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .btn-card-details {
+      flex: 1;
+      padding: 8px 12px;
+      background: var(--sand-card);
+      color: var(--primary-dark);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: var(--transition);
+      text-align: center;
+    }
+    .btn-card-details:hover {
+      background: var(--primary-mid);
+      color: #fff;
+      border-color: var(--primary-mid);
+    }
+
+    /* ----------------------------------------------------
+       AI Recommendation Results Section
+    ---------------------------------------------------- */
+    .rec-results-box {
+      margin-top: 24px;
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      border: 1px solid #d1e2db;
+      box-shadow: 0 10px 25px rgba(22, 78, 60, 0.08);
+      display: none;
+    }
+    .rec-badge-pill {
+      background: #dcfce7;
+      color: #166534;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    /* ----------------------------------------------------
+       How It Works & Why Us
+    ---------------------------------------------------- */
+    .how-it-works-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 28px;
+      background: var(--sand-card);
+      border-radius: var(--radius-lg);
+      padding: 34px;
+      border: 1px solid var(--border-subtle);
+    }
+    .steps-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+    .step-item {
+      position: relative;
+    }
+    .step-num {
+      width: 36px;
+      height: 36px;
+      background: var(--primary-mid);
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 12px;
+    }
+    .step-item h4 {
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+      color: var(--primary-dark);
+    }
+    .step-item p {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+    }
+    .why-card {
+      background: #ffffff;
+      padding: 24px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .why-card h3 {
+      font-size: 1.15rem;
+      margin-bottom: 14px;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .why-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .why-list li {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .why-list li i {
+      color: var(--primary-emerald);
+      font-size: 0.8rem;
+    }
+
+    /* ----------------------------------------------------
+       Destination Details Modal
+    ---------------------------------------------------- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 46, 36, 0.7);
+      backdrop-filter: blur(5px);
+      z-index: 2000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal-container {
+      background: #ffffff;
+      width: 100%;
+      max-width: 980px;
+      max-height: 90vh;
+      border-radius: var(--radius-lg);
+      overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      position: relative;
+    }
+    .modal-close-btn {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 50%;
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+      cursor: pointer;
+      z-index: 10;
+      transition: var(--transition);
+    }
+    .modal-close-btn:hover {
+      background: var(--primary-dark);
+      color: #fff;
+    }
+    .modal-hero-cover {
+      height: 260px;
+      position: relative;
+    }
+    .modal-hero-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .modal-hero-content {
+      position: absolute;
+      bottom: 20px;
+      left: 28px;
+      color: #fff;
+      z-index: 2;
+    }
+    .modal-hero-cover::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 35%, rgba(13, 46, 36, 0.88) 100%);
+    }
+    .modal-nav-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border-subtle);
+      background: #faf9f6;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 5;
+    }
+    .modal-tab-btn {
+      padding: 14px 20px;
+      background: transparent;
+      border: none;
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition);
+    }
+    .modal-tab-btn.active {
+      color: var(--primary-mid);
+    }
+    .modal-tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--primary-mid);
+      border-radius: 3px 3px 0 0;
+    }
+    .modal-body {
+      padding: 26px;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+
+    /* ----------------------------------------------------
+       Real Interactive Map & OSRM Route Box
+    ---------------------------------------------------- */
+    #destMap {
+      width: 100%;
+      height: 380px;
+      min-height: 280px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      margin-top: 12px;
+      background: #e5e7eb;
+      position: relative;
+    }
+    .route-controls-box {
+      background: var(--sand-card);
+      padding: 16px;
+      border-radius: var(--radius-md);
+      margin-bottom: 16px;
+      border: 1px solid var(--border-subtle);
+    }
+    .route-inputs-flex {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .route-info-card {
+      background: #ffffff;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      border-left: 4px solid var(--primary-emerald);
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .route-disclaimer {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    /* ----------------------------------------------------
+       Food Spots & Culinary Specialties
+    ---------------------------------------------------- */
+    .food-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 14px;
+    }
+    .food-card {
+      background: #ffffff;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      transition: var(--transition);
+    }
+    .food-card:hover {
+      box-shadow: var(--shadow-soft);
+      border-color: var(--primary-mid);
+    }
+    .food-type-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #b45309;
+      background: #fef3c7;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+    .dish-tag {
+      background: #ecfdf5;
+      color: #065f46;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      display: inline-block;
+    }
+
+    /* ----------------------------------------------------
+       Trip Cost Breakdown Widget
+    ---------------------------------------------------- */
+    .cost-calc-box {
+      background: var(--sand-card);
+      padding: 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      margin-top: 16px;
+    }
+    .cost-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .cost-metric-cell {
+      background: #ffffff;
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      text-align: center;
+    }
+    .cost-metric-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .cost-metric-val {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--primary-dark);
+      margin-top: 4px;
+    }
+
+    /* ----------------------------------------------------
+       Floating WanderWise AI Assistant
+    ---------------------------------------------------- */
+    .floating-chat-trigger {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--primary-dark);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: var(--radius-full);
+      box-shadow: 0 10px 25px rgba(13, 46, 36, 0.35);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 1500;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: var(--transition);
+    }
+    .floating-chat-trigger:hover {
+      background: var(--primary-mid);
+      transform: translateY(-2px);
+    }
+    .chat-window {
+      position: fixed;
+      bottom: 84px;
+      right: 24px;
+      width: 360px;
+      height: 480px;
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
+      display: none;
+      flex-direction: column;
+      z-index: 1500;
+      border: 1px solid var(--border-subtle);
+      overflow: hidden;
+    }
+    .chat-window.active {
+      display: flex;
+    }
+    .chat-header {
+      background: var(--primary-dark);
+      color: #fff;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .chat-header h4 {
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .chat-mode-tag {
+      font-size: 0.68rem;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+    }
+    .chat-body {
+      flex: 1;
+      padding: 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #faf9f6;
+    }
+    .chat-msg {
+      max-width: 82%;
+      padding: 10px 14px;
+      border-radius: 14px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+    }
+    .chat-msg.bot {
+      background: #ffffff;
+      color: var(--text-main);
+      align-self: flex-start;
+      border: 1px solid var(--border-subtle);
+      border-bottom-left-radius: 4px;
+    }
+    .chat-msg.user {
+      background: var(--primary-mid);
+      color: #ffffff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    .chat-input-row {
+      display: flex;
+      padding: 10px;
+      background: #fff;
+      border-top: 1px solid var(--border-subtle);
+    }
+    .chat-input-row input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      outline: none;
+    }
+    .chat-input-row button {
+      background: var(--primary-mid);
+      color: #fff;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      margin-left: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* ----------------------------------------------------
+       Academic Footer
+    ---------------------------------------------------- */
+    .site-footer {
+      background: var(--primary-dark);
+      color: #ccd8d2;
+      padding: 60px 0 30px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.85rem;
+    }
+    .footer-academic-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-md);
+      padding: 22px;
+      margin-bottom: 30px;
+    }
+    .footer-academic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      font-size: 0.82rem;
+    }
+    .academic-item strong {
+      color: var(--accent-lime-light);
+      display: block;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+    .footer-bottom-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 24px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.78rem;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    /* Responsive Queries */
+    @media (max-width: 992px) {
+      .hero-grid { grid-template-columns: 1fr; }
+      .how-it-works-grid { grid-template-columns: 1fr; }
+      .steps-row { grid-template-columns: 1fr 1fr; }
+      .cost-metrics-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .steps-row { grid-template-columns: 1fr; }
+      .hero-title { font-size: 2.35rem; }
+      .nav-links { display: none; }
+      .chat-window { width: 92%; right: 4%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="container nav-container">
+      <a href="#" class="brand-logo">
+        <i class="fa-solid fa-mountain-sun"></i>
+        <span>WanderWise <span>AI</span></span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#" class="nav-link active">Home</a></li>
+        <li><a href="#destinations-section" class="nav-link">Destinations</a></li>
+        <li><a href="#planner-box" class="nav-link">AI Trip Planner</a></li>
+        <li><a href="#how-it-works" class="nav-link">About</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button class="btn-search-icon" aria-label="Search" onclick="focusDestinationSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
+        <button class="btn-login" onclick="alert('Welcome! Guest traveler profile active.')">Login</button>
+        <button class="btn-signup" onclick="document.getElementById('planner-box').scrollIntoView({behavior:'smooth'})">Sign Up</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Split Hero Section -->
+  <section class="hero-section">
+    <div class="hero-natural-overlay"></div>
+    <div class="container hero-grid">
+      
+      <!-- Left Content -->
+      <div class="hero-left">
+        <span class="hero-eyebrow">Your Next Adventure Awaits</span>
+        <h1 class="hero-title">Find the Place That <span class="highlight-lime">Feels Like You.</span></h1>
+        <p class="hero-desc">
+          Let our AI-powered travel recommender help you discover perfect destinations based on your preferences, budget, season, and real road connectivity.
+        </p>
+        <div class="hero-actions">
+          <button class="btn-hero-primary" onclick="document.getElementById('planner-box').scrollIntoView({behavior:'smooth'})">
+            <i class="fa-solid fa-compass"></i> Plan My Trip
+          </button>
+          <button class="btn-hero-secondary" onclick="document.getElementById('destinations-section').scrollIntoView({behavior:'smooth'})">
+            <i class="fa-solid fa-map-location-dot"></i> Explore Destinations
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Content: AI Trip Planner -->
+      <div class="planner-card" id="planner-box">
+        <div class="planner-header">
+          <div class="planner-badge">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> AI Trip Planner
+          </div>
+          <p class="planner-sub">Tell us your preferences and let AI suggest the best destinations for you.</p>
+        </div>
+
+        <form id="aiPlannerForm" onsubmit="handlePlannerSubmit(event)">
+          <div class="planner-form-grid">
+            
+            <div class="planner-field">
+              <label class="planner-label">Destination Type</label>
+              <div class="select-wrap">
+                <i class="fa-solid fa-layer-group"></i>
+                <select id="planType" class="planner-select">
+                  <option value="any">Select type</option>
+                  <option value="Nature">Nature & Greenery</option>
+                  <option value="Beaches">Beaches & Coastal</option>
+                  <option value="Mountains">Mountains & Hills</option>
+                  <option value="Historical">Historical & Heritage</option>
+                  <option value="Adventure">Adventure & Treks</option>
+                  <option value="Culture">Culture & Soul</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="planner-field">
+              <label class="planner-label">Budget Category</label>
+              <div class="select-wrap">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+                <select id="planBudgetTier" class="planner-select">
+                  <option value="any">Select budget</option>
+                  <option value="budget">Budget (&lt; ₹15,000)</option>
+                  <option value="mid" selected>Moderate (₹15,000 - ₹25,000)</option>
+                  <option value="luxury">Luxury (&gt; ₹25,000)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="planner-field">
+              <label class="planner-label">Preferred Season</label>
+              <div class="select-wrap">
+                <i class="fa-solid fa-calendar"></i>
+                <select id="planSeason" class="planner-select">
+                  <option value="any">Select season</option>
+                  <option value="Winter" selected>Winter (Oct - Feb)</option>
+                  <option value="Monsoon">Monsoon (Jul - Sep)</option>
+                  <option value="Summer">Summer (Mar - Jun)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="planner-field">
+              <label class="planner-label">Trip Duration</label>
+              <div class="select-wrap">
+                <i class="fa-solid fa-clock"></i>
+                <select id="planDuration" class="planner-select">
+                  <option value="any">Select duration</option>
+                  <option value="weekend">2 - 3 Days</option>
+                  <option value="medium" selected>4 - 5 Days</option>
+                  <option value="long">6 - 8 Days</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="planner-field full">
+              <label class="planner-label">Estimated Budget (per person in ₹)</label>
+              <div class="input-wrap">
+                <i class="fa-solid fa-wallet"></i>
+                <input type="number" id="planMaxBudget" class="planner-input" placeholder="e.g. 20000" min="2000" max="100000" value="20000">
+              </div>
+            </div>
+
+            <div class="planner-field full">
+              <label class="planner-label">Optional Preferences</label>
+              <div class="pref-checkboxes">
+                <label class="pref-checkbox-label">
+                  <input type="checkbox" id="prefPeaceful" checked> Peaceful destinations
+                </label>
+                <label class="pref-checkbox-label">
+                  <input type="checkbox" id="prefAdventure"> Adventure activities
+                </label>
+                <label class="pref-checkbox-label">
+                  <input type="checkbox" id="prefGreenery" checked> Nature and greenery
+                </label>
+                <label class="pref-checkbox-label">
+                  <input type="checkbox" id="prefHeritage"> Historical places
+                </label>
+                <label class="pref-checkbox-label">
+                  <input type="checkbox" id="prefFamily" checked> Family-friendly trips
+                </label>
+              </div>
+            </div>
+
+          </div>
+
+          <button type="submit" class="btn-planner-submit">
+            <i class="fa-solid fa-sparkles"></i> Get Recommendations &rarr;
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- AI Recommendations Results Container -->
+  <section class="container" id="recSection" style="display:none; margin-top: 10px;">
+    <div class="rec-results-box" id="recResultsBox">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <div>
+          <span class="rec-badge-pill">WanderWise AI Scored Matches</span>
+          <h2 class="section-title">Top 3 Personalised Recommendations</h2>
+          <p class="section-sub">Transparent multi-attribute compatibility scoring based on budget, season, and style.</p>
+        </div>
+        <button onclick="document.getElementById('recSection').style.display='none'" style="background:none; border:none; color:var(--text-muted); cursor:pointer;"><i class="fa-solid fa-xmark fa-lg"></i></button>
+      </div>
+      <div class="destinations-grid" id="recGrid"></div>
+    </div>
+  </section>
+
+  <!-- Category Exploration Section -->
+  <section class="section-wrap container">
+    <div class="section-header">
+      <h2 class="section-title">Explore by Category</h2>
+      <p class="section-sub">Find destinations that match your travel style.</p>
+    </div>
+    <div class="category-pills">
+      <div class="category-pill active" onclick="filterByCategory('All', this)">
+        <span class="cat-icon-circle cat-surprise"><i class="fa-solid fa-dice"></i></span> All Places
+      </div>
+      <div class="category-pill" onclick="filterByCategory('Nature', this)">
+        <span class="cat-icon-circle cat-nature"><i class="fa-solid fa-leaf"></i></span> Nature
+      </div>
+      <div class="category-pill" onclick="filterByCategory('Beaches', this)">
+        <span class="cat-icon-circle cat-beach"><i class="fa-solid fa-water"></i></span> Beaches
+      </div>
+      <div class="category-pill" onclick="filterByCategory('Mountains', this)">
+        <span class="cat-icon-circle cat-mountain"><i class="fa-solid fa-mountain"></i></span> Mountains
+      </div>
+      <div class="category-pill" onclick="filterByCategory('Historical', this)">
+        <span class="cat-icon-circle cat-heritage"><i class="fa-solid fa-landmark"></i></span> Historical
+      </div>
+      <div class="category-pill" onclick="filterByCategory('Adventure', this)">
+        <span class="cat-icon-circle cat-adventure"><i class="fa-solid fa-person-hiking"></i></span> Adventure
+      </div>
+      <div class="category-pill" onclick="filterByCategory('Culture', this)">
+        <span class="cat-icon-circle cat-culture"><i class="fa-solid fa-om"></i></span> Culture
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Destinations Grid -->
+  <section class="section-wrap container" id="destinations-section" style="padding-top: 0;">
+    <div class="section-header" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap: wrap; gap: 14px;">
+      <div>
+        <h2 class="section-title">Featured Destinations</h2>
+        <p class="section-sub">Discover some of the most popular travel spots in India.</p>
+      </div>
+      <div style="max-width: 280px; width: 100%;">
+        <input type="text" id="destSearchInput" onkeyup="handleDestSearch(this.value)" placeholder="Search city or state..." style="width:100%; padding:9px 16px; border:1px solid var(--border-subtle); border-radius:var(--radius-full); font-size:0.85rem; outline:none; background:#fff;">
+      </div>
+    </div>
+    <div class="destinations-grid" id="destCatalogGrid"></div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section class="section-wrap container" id="how-it-works">
+    <div class="how-it-works-grid">
+      <div>
+        <h2 class="section-title" style="margin-bottom: 24px;">How It Works</h2>
+        <p class="section-sub" style="margin-top:-18px; margin-bottom: 24px;">Get your dream trip in just a few simple steps.</p>
+        <div class="steps-row">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <h4>Share Your Preferences</h4>
+            <p>Tell us what kind of trip you want and your budget.</p>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <h4>Our AI Finds the Best Matches</h4>
+            <p>We analyze thousands of options using smart recommendations.</p>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <h4>Get Personalised Suggestions</h4>
+            <p>See the top destinations with reasons why they match you.</p>
+          </div>
+          <div class="step-item">
+            <div class="step-num">4</div>
+            <h4>Plan & Explore</h4>
+            <p>Calculate road routes, view food spots, and save trips.</p>
+          </div>
+        </div>
+      </div>
+      <div class="why-card">
+        <div>
+          <h3><i class="fa-solid fa-mountain" style="color:var(--primary-mid);"></i> Why Choose WanderWise AI?</h3>
+          <ul class="why-list" style="margin-top: 14px;">
+            <li><i class="fa-solid fa-check"></i> Personalized recommendations</li>
+            <li><i class="fa-solid fa-check"></i> Save your favourite destinations</li>
+            <li><i class="fa-solid fa-check"></i> Clean OpenFreeMap (No CARTO watermark)</li>
+            <li><i class="fa-solid fa-check"></i> Shortest road routing via OSRM</li>
+            <li><i class="fa-solid fa-check"></i> Live nearby food places via Overpass</li>
+            <li><i class="fa-solid fa-check"></i> Your travel, your way</li>
+          </ul>
+        </div>
+        <div style="font-size:0.75rem; color:var(--text-muted); margin-top:16px;">
+          Built for mindful explorers seeking genuine discovery.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Floating WanderWise AI Assistant -->
+  <div class="floating-chat-trigger" onclick="toggleAIChat()">
+    <i class="fa-solid fa-sparkles" style="color: var(--accent-lime-light);"></i>
+    <span>Ask WanderWise AI</span>
+  </div>
+
+  <div class="chat-window" id="aiChatWindow">
+    <div class="chat-header">
+      <h4><i class="fa-solid fa-robot"></i> WanderWise Agent</h4>
+      <span class="chat-mode-tag">Local Engine</span>
+      <button onclick="toggleAIChat()" style="background:none; color:#fff; font-size:1.1rem; border:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="chat-body" id="chatMessages">
+      <div class="chat-msg bot">
+        Hello! I am your <strong>WanderWise AI concierge</strong>. Ask me to compare destinations, recommend getaways under your budget, find authentic food dishes, or explain road routes!
+      </div>
+    </div>
+    <form class="chat-input-row" onsubmit="handleSendChatMessage(event)">
+      <input type="text" id="chatInput" placeholder="Ask about places, food, or road routes...">
+      <button type="submit"><i class="fa-solid fa-paper-plane"></i></button>
+    </form>
+  </div>
+
+  <!-- Destination Details Modal -->
+  <div class="modal-overlay" id="destModal">
+    <div class="modal-container">
+      <button class="modal-close-btn" onclick="closeDestModal()"><i class="fa-solid fa-xmark"></i></button>
+      
+      <div class="modal-hero-cover">
+        <img id="mCoverImg" src="" alt="Destination">
+        <div class="modal-hero-content">
+          <span class="card-tag" id="mCategoryTag" style="position:static; margin-bottom:8px; display:inline-block;">Category</span>
+          <h2 id="mTitle" style="font-size:2rem; font-weight:700;">Destination Name</h2>
+          <p id="mSubtitle" style="font-size:0.9rem; opacity:0.95;"><i class="fa-solid fa-location-dot"></i> State, India</p>
+        </div>
+      </div>
+
+      <nav class="modal-nav-tabs">
+        <button class="modal-tab-btn active" onclick="switchModalTab('overview', this)">Overview & Itinerary</button>
+        <button class="modal-tab-btn" onclick="switchModalTab('map-route', this)">Interactive Map & Route</button>
+        <button class="modal-tab-btn" onclick="switchModalTab('food-dining', this)">Nearby & Local Food</button>
+        <button class="modal-tab-btn" onclick="switchModalTab('budget-calc', this)">Cost Breakdown</button>
+      </nav>
+
+      <div class="modal-body">
+        
+        <!-- Tab 1: Overview -->
+        <div class="tab-content active" id="tab-overview">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px;">
+            <div style="background:var(--sand-card); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); text-align:center;">
+              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Best Visiting Season</span>
+              <p id="mBestSeason" style="font-weight:700; color:var(--primary-dark); font-size:1rem; margin-top:2px;"></p>
+            </div>
+            <div style="background:var(--sand-card); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); text-align:center;">
+              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Suggested Duration</span>
+              <p id="mDuration" style="font-weight:700; color:var(--primary-dark); font-size:1rem; margin-top:2px;"></p>
+            </div>
+            <div style="background:var(--sand-card); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); text-align:center;">
+              <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">Estimated Base Budget</span>
+              <p id="mBaseBudget" style="font-weight:700; color:var(--primary-dark); font-size:1rem; margin-top:2px;"></p>
+            </div>
+          </div>
+          <h4 style="margin-bottom:8px; color:var(--primary-dark);">About Destination</h4>
+          <p id="mDescription" style="margin-bottom:20px; font-size:0.92rem; line-height:1.7; color:var(--text-main);"></p>
+          
+          <h4 style="margin-bottom:10px; color:var(--primary-dark);">Key Attractions</h4>
+          <ul id="mAttractionsList" style="padding-left:20px; font-size:0.9rem; color:var(--text-muted); line-height:1.8;"></ul>
+        </div>
+
+        <!-- Tab 2: Map & Route (OpenFreeMap + MapLibre Leaflet) -->
+        <div class="tab-content" id="tab-map-route">
+          <div class="route-controls-box">
+            <h4 style="font-size:0.95rem; margin-bottom:10px; color:var(--primary-dark);"><i class="fa-solid fa-route"></i> Shortest Road Route Calculator (OSRM)</h4>
+            <div class="route-inputs-flex">
+              <input type="text" id="routeStartCity" placeholder="Enter starting city (e.g. Pune, Mumbai, Kolhapur, Delhi)..." style="flex:1; min-width:220px; padding:9px 12px; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); font-size:0.85rem; outline:none;">
+              <button onclick="calculateShortestRoadRoute()" style="padding:9px 18px; background:var(--primary-mid); color:#fff; border-radius:var(--radius-sm); font-size:0.85rem; font-weight:600;"><i class="fa-solid fa-magnifying-glass"></i> Find Route</button>
+              <button onclick="useUserGeolocation()" style="padding:9px 14px; background:var(--surface-white); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); font-size:0.85rem;" title="Use My Current GPS Location"><i class="fa-solid fa-crosshairs"></i> Use GPS</button>
+            </div>
+            <div id="routeResultCard" class="route-info-card" style="display:none;">
+              <div>
+                <span id="routeDistanceText" style="font-weight:700; color:var(--primary-dark); font-size:1rem;">-- km</span>
+                <span style="color:var(--text-muted); margin:0 6px;">&bull;</span>
+                <span id="routeDurationText" style="color:var(--text-muted);">-- driving</span>
+              </div>
+              <a id="googleMapsBtn" href="#" target="_blank" rel="noopener" style="color:var(--primary-mid); font-weight:600; font-size:0.82rem;"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open Google Maps</a>
+            </div>
+            <p class="route-disclaimer">
+              * Note: Route represents the shortest road distance among alternatives returned by public OSRM. Driving times vary with mountain ghat conditions, seasonal weather, and road works.
+            </p>
+          </div>
+
+          <!-- Real Interactive Map Container -->
+          <div id="destMap"></div>
+        </div>
+
+        <!-- Tab 3: Nearby Food Spots & Specialties -->
+        <div class="tab-content" id="tab-food-dining">
+          <h4 style="color:var(--primary-dark); margin-bottom:6px;"><i class="fa-solid fa-utensils"></i> Iconic Local Food Specialties</h4>
+          <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:14px;">Curated regional dishes and culinary highlights.</p>
+          <div class="food-grid" id="specialtyDishesGrid"></div>
+
+          <hr style="border:none; border-top:1px solid var(--border-subtle); margin:24px 0;">
+
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+            <div>
+              <h4 style="color:var(--primary-dark); margin-bottom:4px;"><i class="fa-solid fa-store"></i> Live Nearby Places (OpenStreetMap)</h4>
+              <p style="font-size:0.82rem; color:var(--text-muted);">Queried in real time within ~4 km via Overpass API.</p>
+            </div>
+            <button onclick="fetchNearbyFoodSpots(currentModalDest.coords)" style="padding:6px 14px; background:var(--sand-card); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); font-size:0.8rem; font-weight:600; color:var(--primary-dark);"><i class="fa-solid fa-rotate-right"></i> Refresh Live Places</button>
+          </div>
+          <div class="food-grid" id="liveFoodGrid"></div>
+        </div>
+
+        <!-- Tab 4: Cost Estimator -->
+        <div class="tab-content" id="tab-budget-calc">
+          <h4 style="color:var(--primary-dark); margin-bottom:6px;"><i class="fa-solid fa-calculator"></i> Trip Cost Breakdown & Planner</h4>
+          <p style="font-size:0.82rem; color:var(--text-muted);">Indicative estimates based on accommodation comfort, duration, and party size.</p>
+          
+          <div class="cost-calc-box">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:14px;">
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">TRAVEL STYLE</label>
+                <select id="calcStyle" onchange="recalculateCostBreakdown()" style="width:100%; padding:9px; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); margin-top:4px;">
+                  <option value="budget">Backpacker / Budget</option>
+                  <option value="comfort" selected>Comfort / Mid-Range</option>
+                  <option value="luxury">Luxury / Premium</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">TRIP DAYS</label>
+                <select id="calcDays" onchange="recalculateCostBreakdown()" style="width:100%; padding:9px; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); margin-top:4px;">
+                  <option value="2">2 Days (Weekend)</option>
+                  <option value="3" selected>3 Days</option>
+                  <option value="5">5 Days</option>
+                  <option value="7">7 Days</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted);">TRAVELERS</label>
+                <select id="calcPersons" onchange="recalculateCostBreakdown()" style="width:100%; padding:9px; border:1px solid var(--border-subtle); border-radius:var(--radius-sm); margin-top:4px;">
+                  <option value="1">Solo (1 Person)</option>
+                  <option value="2" selected>Couple (2 Persons)</option>
+                  <option value="4">Group (4 Persons)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="cost-metrics-grid">
+              <div class="cost-metric-cell">
+                <span class="cost-metric-label">Stay / Hotels</span>
+                <div class="cost-metric-val" id="costStay">₹0</div>
+              </div>
+              <div class="cost-metric-cell">
+                <span class="cost-metric-label">Food & Dining</span>
+                <div class="cost-metric-val" id="costFood">₹0</div>
+              </div>
+              <div class="cost-metric-cell">
+                <span class="cost-metric-label">Local Travel</span>
+                <div class="cost-metric-val" id="costTransit">₹0</div>
+              </div>
+              <div class="cost-metric-cell">
+                <span class="cost-metric-label">Activities & Entry</span>
+                <div class="cost-metric-val" id="costActivity">₹0</div>
+              </div>
+            </div>
+
+            <div style="background:#ffffff; padding:14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <div>
+                <span style="font-size:0.78rem; color:var(--text-muted); font-weight:700;">TOTAL ESTIMATED EXPENDITURE</span>
+                <div style="font-size:1.45rem; font-weight:700; color:var(--primary-dark);" id="costTotal">₹0</div>
+              </div>
+              <span style="font-size:0.75rem; background:#ecfdf5; color:#065f46; font-weight:600; padding:4px 10px; border-radius:var(--radius-full);">Estimates Verified for 2026-2027</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Academic Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-academic-card">
+        <h4 style="color:var(--accent-lime-light); font-size:1.05rem; margin-bottom:12px; font-family:'Playfair Display', serif;">
+          Project: AI-Based Travel Destination Recommendation System
+        </h4>
+        <div class="footer-academic-grid">
+          <div class="academic-item">
+            <strong>Student Name</strong>
+            <span>Shubham Satish Patil</span>
+          </div>
+          <div class="academic-item">
+            <strong>Roll No / PRN</strong>
+            <span>Roll No: 2009 | PRN: 1025091010</span>
+          </div>
+          <div class="academic-item">
+            <strong>Department & Subject</strong>
+            <span>AI & DS | Foundations of Artificial Intelligence (2ADPC204)</span>
+          </div>
+          <div class="academic-item">
+            <strong>Institution & Academic Year</strong>
+            <span>Annasaheb Dange College of Engineering and Technology, Ashta | 2026–2027</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom-row">
+        <div>&copy; 2026 WanderWise AI. All rights reserved. OpenFreeMap, OpenMapTiles &amp; OpenStreetMap Contributors.</div>
+        <div style="display:flex; gap:16px;">
+          <a href="#" style="color:#ccd8d2;">Privacy Policy</a>
+          <a href="#" style="color:#ccd8d2;">Terms &amp; Conditions</a>
+          <a href="#" style="color:#ccd8d2;">Contact Us</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- MapLibre GL JS -->
+  <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+  
+  <!-- MapLibre GL Leaflet Bridge Plugin -->
+  <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.21/leaflet-maplibre-gl.js"></script>
+
+  <script>
+    /* ========================================================
+       1. DESTINATION DATA REPOSITORY (Accurate GPS & Real Data)
+       ======================================================== */
+    const DESTINATIONS = [
+      {
+        id: "mahabaleshwar",
+        name: "Mahabaleshwar",
+        state: "Maharashtra",
+        category: "Nature",
+        rating: 4.5,
+        reviews: "1.2k",
+        duration: "2-5 days",
+        durationDays: 3,
+        estimatedBudget: 14000,
+        bestSeason: "Monsoon",
+        seasonCategory: ["Monsoon", "Winter"],
+        coords: [17.9237, 73.6586],
+        image: "https://images.unsplash.com/photo-1596895111956-bf1cf0599ce5?auto=format&fit=crop&w=900&q=80",
+        description: "Famous hill station in Maharashtra's Western Ghats known for strawberry farms, dramatic valley viewpoints, and evergreen misty mountain plateaus.",
+        attractions: ["Arthur's Seat & Valley Views", "Mapro Garden Strawberry Orchards", "Venna Lake Boating", "Elephant's Head Point", "Pratapgad Fort"],
+        tags: ["peaceful", "greenery", "family"],
+        specialties: [
+          { name: "Fresh Strawberry Cream", type: "Dessert", estPrice: "₹180–₹250", desc: "Fresh strawberries folded in whipped organic dairy cream." },
+          { name: "Roasted Mahabaleshwar Chana", type: "Snack", estPrice: "₹40–₹80", desc: "Warm spiced roasted chickpeas from bazaar hawkers." },
+          { name: "Maharashtrian Pithla Bhakri", type: "Main", estPrice: "₹100–₹160", desc: "Gram flour curry served with jowar flatbread and spicy thecha." }
+        ]
+      },
+      {
+        id: "goa",
+        name: "Goa",
+        state: "Goa",
+        category: "Beaches",
+        rating: 4.6,
+        reviews: "2.3k",
+        duration: "3-5 days",
+        durationDays: 4,
+        estimatedBudget: 22000,
+        bestSeason: "Winter",
+        seasonCategory: ["Winter"],
+        coords: [15.2993, 74.1240],
+        image: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=900&q=80",
+        description: "Tropical coastal paradise boasting golden beaches, Portuguese heritage churches, water adventures, and lively beachside dining.",
+        attractions: ["Palolem Beach Sands", "Aguada & Chapora Forts", "Basilica of Bom Jesus", "Dudhsagar Falls Safari"],
+        tags: ["adventure", "peaceful", "family"],
+        specialties: [
+          { name: "Goan Fish Curry Thali", type: "Seafood", estPrice: "₹220–₹400", desc: "Spiced coconut-kokum Kingfish curry served with steamed rice." },
+          { name: "Traditional Bebinca", type: "Dessert", estPrice: "₹140–₹200", desc: "Multi-layered Indo-Portuguese coconut milk pudding." },
+          { name: "Poi with Vindaloo", type: "Main", estPrice: "₹180–₹320", desc: "Crusty local fermented bread with tangy, fiery pork/chicken vindaloo." }
+        ]
+      },
+      {
+        id: "jaipur",
+        name: "Jaipur",
+        state: "Rajasthan",
+        category: "Historical",
+        rating: 4.4,
+        reviews: "1.8k",
+        duration: "2-4 days",
+        durationDays: 3,
+        estimatedBudget: 18000,
+        bestSeason: "Winter",
+        seasonCategory: ["Winter"],
+        coords: [26.9124, 75.7873],
+        image: "https://images.unsplash.com/photo-1477587458883-47145ed94245?auto=format&fit=crop&w=900&q=80",
+        description: "The historic Pink City, home to majestic Rajput forts, astronomical stepwells, bustling bazaar alleys, and ornate palace courtyards.",
+        attractions: ["Hawa Mahal Facade", "Amber Fort & Shila Devi", "City Palace Museum", "Jantar Mantar Observatory", "Nahargarh Sunset Point"],
+        tags: ["heritage", "culture", "family"],
+        specialties: [
+          { name: "Dal Baati Churma", type: "Thali", estPrice: "₹200–₹350", desc: "Hard wheat rolls baked in desi ghee, served with panchmel dal." },
+          { name: "Pyaaz Kachori", type: "Street Food", estPrice: "₹40–₹70", desc: "Crisp flaky pastry stuffed with seasoned caramelized onions." },
+          { name: "Paneer Ghevar", type: "Sweet", estPrice: "₹150–₹280", desc: "Honeycomb sweet cake soaked in saffron syrup with rabdi topping." }
+        ]
+      },
+      {
+        id: "manali",
+        name: "Manali",
+        state: "Himachal Pradesh",
+        category: "Mountains",
+        rating: 4.5,
+        reviews: "2.1k",
+        duration: "3-5 days",
+        durationDays: 4,
+        estimatedBudget: 24000,
+        bestSeason: "Winter",
+        seasonCategory: ["Summer", "Winter"],
+        coords: [32.2432, 77.1892],
+        image: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=900&q=80",
+        description: "Snow-crowned Himalayan valley popular for alpine adventures, Solang sports, Rohtang Pass, and scenic pine-covered riverside walks.",
+        attractions: ["Solang Valley Adventure Zone", "Rohtang Pass & Atal Tunnel", "Old Manali Cafes", "Hadimba Devi Temple", "Jogini Waterfalls"],
+        tags: ["adventure", "peaceful", "greenery"],
+        specialties: [
+          { name: "Himachali Siddu", type: "Snack", estPrice: "₹80–₹140", desc: "Steamed fermented wheat bun stuffed with spiced walnut-poppy paste." },
+          { name: "Grilled Himalayan Trout", type: "Fish", estPrice: "₹400–₹650", desc: "Fresh river fish pan-seared with mountain butter and herbs." },
+          { name: "Chha Gosht / Madra", type: "Curry", estPrice: "₹180–₹300", desc: "Slow-cooked yogurt-based chickpea and aromatic spice stew." }
+        ]
+      },
+      {
+        id: "matheran",
+        name: "Matheran",
+        state: "Maharashtra",
+        category: "Nature",
+        rating: 4.3,
+        reviews: "1.4k",
+        duration: "1-2 days",
+        durationDays: 2,
+        estimatedBudget: 9500,
+        bestSeason: "Monsoon",
+        seasonCategory: ["Monsoon", "Winter"],
+        coords: [18.9865, 73.2679],
+        image: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=900&q=80",
+        description: "Automobile-free green hill station with red clay paths, lush valley cliffs, peaceful horse rides, and vintage heritage toy trains.",
+        attractions: ["Panorama Point Sunrise", "Charlotte Lake", "Louisa Point", "Heritage Toy Train Route", "Echo Point"],
+        tags: ["peaceful", "greenery", "family"],
+        specialties: [
+          { name: "Matheran Chikki & Fudge", type: "Sweet", estPrice: "₹100–₹240", desc: "Handmade peanut, cashew, and chocolate fudge." },
+          { name: "Zunka Bhakar", type: "Main", estPrice: "₹70–₹120", desc: "Rustic chickpea dry curry paired with hot sorghum flatbread." }
+        ]
+      },
+      {
+        id: "rishikesh",
+        name: "Rishikesh",
+        state: "Uttarakhand",
+        category: "Adventure",
+        rating: 4.7,
+        reviews: "2.4k",
+        duration: "2-4 days",
+        durationDays: 3,
+        estimatedBudget: 16000,
+        bestSeason: "Winter",
+        seasonCategory: ["Winter", "Summer"],
+        coords: [30.0869, 78.2676],
+        image: "https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=900&q=80",
+        description: "Yoga capital along the holy Ganges known for exhilarating white water rafting, suspension bridges, cliff jumping, and evening Ganga Aarti.",
+        attractions: ["White Water Rafting (Shivpuri)", "Triveni Ghat Evening Aarti", "Beatles Ashram (Chaurasi Kutia)", "Ram & Lakshman Jhula"],
+        tags: ["adventure", "culture", "peaceful"],
+        specialties: [
+          { name: "Aloo Puri at Chotiwala", type: "Vegetarian", estPrice: "₹90–₹160", desc: "Puffed hot puris with spicy cumin potato curry." },
+          { name: "Ayurvedic Herbal Chai", type: "Drink", estPrice: "₹40–₹80", desc: "Mountain honey, tulsi, lemongrass, and crushed fresh ginger." }
+        ]
+      },
+      {
+        id: "udaipur",
+        name: "Udaipur",
+        state: "Rajasthan",
+        category: "Culture",
+        rating: 4.8,
+        reviews: "2.9k",
+        duration: "2-4 days",
+        durationDays: 3,
+        estimatedBudget: 25000,
+        bestSeason: "Winter",
+        seasonCategory: ["Winter"],
+        coords: [24.5854, 73.7125],
+        image: "https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=900&q=80",
+        description: "The City of Lakes featuring majestic marble palaces rising from calm waters, boat safaris on Lake Pichola, and Rajasthani sunset courtyards.",
+        attractions: ["City Palace Complex", "Lake Pichola Boat Cruise", "Jag Mandir Island Palace", "Saheliyon-ki-Bari Fountains"],
+        tags: ["heritage", "peaceful", "culture"],
+        specialties: [
+          { name: "Gatte ki Sabzi & Bajra Roti", type: "Curry", estPrice: "₹160–₹260", desc: "Spiced gram flour dumplings in curd gravy with pearl millet bread." },
+          { name: "Kullad Coffee & Rabdi Kulfi", type: "Dessert", estPrice: "₹50–₹120", desc: "Frothy roasted coffee in terracotta pots and saffron cream kulfi." }
+        ]
+      }
+    ];
+
+    let currentModalDest = null;
+    let destLeafletMap = null;
+    let activeMaplibreLayer = null;
+    let activeDestinationMarker = null;
+    let activeRoutePolyline = null;
+    let foodSpotMarkers = [];
+
+    // Official OpenFreeMap Liberty Vector Style (No API key, No CARTO watermark)
+    const OPENFREEMAP_LIBERTY_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+
+    /* ========================================================
+       2. LEAFLET + MAPLIBRE GL BRIDGE INITIALIZATION
+       ======================================================== */
+    function initOrUpdateLeafletMap(coords, destName) {
+      const mapContainer = document.getElementById('destMap');
+      if (!mapContainer) return;
+
+      // Initialize Map once
+      if (!destLeafletMap) {
+        destLeafletMap = L.map('destMap', {
+          zoomControl: true,
+          scrollWheelZoom: true
+        }).setView(coords, 12);
+
+        // Mount OpenFreeMap vector style via MapLibre GL Leaflet bridge
+        try {
+          activeMaplibreLayer = L.maplibreGL({
+            style: OPENFREEMAP_LIBERTY_STYLE,
+            attribution: '&copy; <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> &copy; <a href="https://openmaptiles.org" target="_blank" rel="noopener">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>'
+          }).addTo(destLeafletMap);
+        } catch (e) {
+          console.warn("MapLibre bridge mount error, falling back to raster tiles", e);
+          L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri'
+          }).addTo(destLeafletMap);
+        }
+      } else {
+        destLeafletMap.setView(coords, 12);
+      }
+
+      // Clear previous routes and food spot pins
+      if (activeRoutePolyline) {
+        destLeafletMap.removeLayer(activeRoutePolyline);
+        activeRoutePolyline = null;
+      }
+      clearFoodMarkers();
+
+      // Update Destination Marker
+      if (activeDestinationMarker) {
+        destLeafletMap.removeLayer(activeDestinationMarker);
+      }
+
+      activeDestinationMarker = L.marker(coords)
+        .addTo(destLeafletMap)
+        .bindPopup(`<strong>${destName}</strong><br>Destination Center`)
+        .openPopup();
+
+      staggeredInvalidateMap();
+    }
+
+    function staggeredInvalidateMap() {
+      if (!destLeafletMap) return;
+      setTimeout(() => { if (destLeafletMap) destLeafletMap.invalidateSize(); }, 80);
+      setTimeout(() => { if (destLeafletMap) destLeafletMap.invalidateSize(); }, 250);
+      setTimeout(() => { if (destLeafletMap) destLeafletMap.invalidateSize(); }, 500);
+    }
+
+    /* ========================================================
+       3. SHORTEST ROAD ROUTE (OSRM + NOMINATIM)
+       ======================================================== */
+    async function calculateShortestRoadRoute() {
+      const startCity = document.getElementById('routeStartCity').value.trim();
+      if (!startCity) {
+        alert("Please enter a starting city or use the GPS button.");
+        return;
+      }
+      if (!currentModalDest) return;
+
+      try {
+        // Geocode origin with Nominatim
+        const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(startCity)}&limit=1`);
+        const geoData = await geoRes.json();
+
+        if (!geoData || geoData.length === 0) {
+          alert(`Could not pinpoint "${startCity}". Please check the spelling or specify a nearby major city.`);
+          return;
+        }
+
+        const startCoords = [parseFloat(geoData[0].lat), parseFloat(geoData[0].lon)];
+        await fetchAndDrawOSRMRoute(startCoords, currentModalDest.coords, startCity);
+      } catch (err) {
+        console.error(err);
+        alert("Failed to geocode location. Please check your network connection.");
+      }
+    }
+
+    function useUserGeolocation() {
+      if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const userCoords = [position.coords.latitude, position.coords.longitude];
+          document.getElementById('routeStartCity').value = `Current Location (${userCoords[0].toFixed(2)}, ${userCoords[1].toFixed(2)})`;
+          await fetchAndDrawOSRMRoute(userCoords, currentModalDest.coords, "Your Location");
+        },
+        (error) => {
+          let msg = "Unable to retrieve location.";
+          if (error.code === 1) msg = "Location permission was denied.";
+          else if (error.code === 2) msg = "Position unavailable.";
+          else if (error.code === 3) msg = "Request timed out.";
+          alert(msg);
+        },
+        { timeout: 10000, enableHighAccuracy: true }
+      );
+    }
+
+    async function fetchAndDrawOSRMRoute(startCoords, destCoords, originLabel) {
+      const [startLat, startLng] = startCoords;
+      const [destLat, destLng] = destCoords;
+
+      // OSRM coordinates format: lng,lat
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${startLng},${startLat};${destLng},${destLat}?overview=full&geometries=geojson`;
+
+      try {
+        const res = await fetch(osrmUrl);
+        const data = await res.json();
+
+        if (!data.routes || data.routes.length === 0) {
+          alert("No road route could be calculated between these two points.");
+          return;
+        }
+
+        const route = data.routes[0];
+        const distKm = (route.distance / 1000).toFixed(1);
+        const hours = Math.floor(route.duration / 3600);
+        const mins = Math.round((route.duration % 3600) / 60);
+        const durText = hours > 0 ? `${hours} hrs ${mins} mins` : `${mins} mins`;
+
+        // Draw Polyline
+        if (activeRoutePolyline && destLeafletMap) {
+          destLeafletMap.removeLayer(activeRoutePolyline);
+        }
+
+        const latLngs = route.geometry.coordinates.map(pt => [pt[1], pt[0]]);
+        activeRoutePolyline = L.polyline(latLngs, {
+          color: '#10b981',
+          weight: 5,
+          opacity: 0.9,
+          lineJoin: 'round'
+        }).addTo(destLeafletMap);
+
+        // Marker at Origin
+        L.marker(startCoords)
+          .addTo(destLeafletMap)
+          .bindPopup(`<strong>Start:</strong> ${originLabel}`)
+          .openPopup();
+
+        // Fit map bounds
+        destLeafletMap.fitBounds(activeRoutePolyline.getBounds(), { padding: [40, 40] });
+
+        // Update UI Info
+        document.getElementById('routeDistanceText').innerText = `${distKm} km`;
+        document.getElementById('routeDurationText').innerText = `${durText} driving`;
+        document.getElementById('googleMapsBtn').href = `https://www.google.com/maps/dir/?api=1&origin=${startLat},${startLng}&destination=${destLat},${destLng}&travelmode=driving`;
+        document.getElementById('routeResultCard').style.display = 'flex';
+      } catch (err) {
+        console.error(err);
+        alert("Failed to compute shortest road route via OSRM. Please try again.");
+      }
+    }
+
+    /* ========================================================
+       4. NEARBY FOOD SPOTS (OVERPASS API)
+       ======================================================== */
+    async function fetchNearbyFoodSpots(coords) {
+      const container = document.getElementById('liveFoodGrid');
+      container.innerHTML = `<div style="grid-column:1/-1; padding:20px; text-align:center; color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Querying OpenStreetMap nearby amenities...</div>`;
+
+      clearFoodMarkers();
+
+      const [lat, lng] = coords;
+      const overpassQuery = `
+        [out:json][timeout:15];
+        (
+          node["amenity"~"restaurant|cafe"](around:3500, ${lat}, ${lng});
+        );
+        out 8;
+      `;
+
+      try {
+        const res = await fetch('https://overpass-api.de/api/interpreter', {
+          method: 'POST',
+          body: overpassQuery
+        });
+        const data = await res.json();
+
+        if (!data.elements || data.elements.length === 0) {
+          container.innerHTML = `<p style="grid-column:1/-1; font-size:0.85rem; color:var(--text-muted);">No live verified food nodes recorded within 3.5 km in this OSM dataset snapshot.</p>`;
+          return;
+        }
+
+        container.innerHTML = '';
+        data.elements.forEach((el) => {
+          const tags = el.tags || {};
+          const name = tags.name || "Local Eatery / Café";
+          const cuisine = tags.cuisine ? tags.cuisine.replace(/_/g, ' ') : "Indian / Regional";
+          const opening = tags.opening_hours || "Hours not recorded";
+          const street = tags['addr:street'] ? `${tags['addr:street']}, ${tags['addr:city'] || ''}` : "Street address unlisted";
+
+          const card = document.createElement('div');
+          card.className = 'food-card';
+          card.innerHTML = `
+            <span class="food-type-tag">${tags.amenity ? tags.amenity.toUpperCase() : 'FOOD'}</span>
+            <h5 style="font-size:0.95rem; margin:4px 0; color:var(--primary-dark); font-weight:700;">${name}</h5>
+            <p style="font-size:0.78rem; color:var(--text-muted);"><i class="fa-solid fa-utensils"></i> Cuisine: ${cuisine}</p>
+            <p style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;"><i class="fa-solid fa-clock"></i> ${opening}</p>
+            <p style="font-size:0.72rem; color:#94a3b8; margin-top:4px;"><i class="fa-solid fa-location-dot"></i> ${street}</p>
+            <button onclick="focusFoodMarker(${el.lat}, ${el.lon}, '${name.replace(/'/g, "\\'")}')" style="margin-top:8px; padding:4px 10px; background:var(--sand-card); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); font-size:0.75rem; font-weight:600; cursor:pointer;">
+              <i class="fa-solid fa-map-pin"></i> Locate on Map
+            </button>
+          `;
+          container.appendChild(card);
+
+          // Add Leaflet food marker
+          if (destLeafletMap) {
+            const fMarker = L.circleMarker([el.lat, el.lon], {
+              radius: 6,
+              fillColor: '#f59e0b',
+              color: '#ffffff',
+              weight: 2,
+              fillOpacity: 0.9
+            }).addTo(destLeafletMap);
+            fMarker.bindPopup(`<strong>${name}</strong><br><small>${cuisine}</small>`);
+            foodSpotMarkers.push(fMarker);
+          }
+        });
+      } catch (e) {
+        container.innerHTML = `<p style="grid-column:1/-1; font-size:0.85rem; color:#ef4444;">Could not load live food listings from Overpass API. Please retry shortly.</p>`;
+      }
+    }
+
+    function clearFoodMarkers() {
+      if (foodSpotMarkers.length > 0 && destLeafletMap) {
+        foodSpotMarkers.forEach(m => destLeafletMap.removeLayer(m));
+      }
+      foodSpotMarkers = [];
+    }
+
+    function focusFoodMarker(lat, lon, name) {
+      switchModalTab('map-route', document.querySelectorAll('.modal-tab-btn')[1]);
+      setTimeout(() => {
+        if (destLeafletMap) {
+          destLeafletMap.setView([lat, lon], 15);
+          L.popup().setLatLng([lat, lon]).setContent(`<strong>${name}</strong>`).openOn(destLeafletMap);
+        }
+      }, 200);
+    }
+
+    /* ========================================================
+       5. COST ESTIMATOR CALCULATION
+       ======================================================== */
+    function recalculateCostBreakdown() {
+      if (!currentModalDest) return;
+
+      const style = document.getElementById('calcStyle').value;
+      const days = parseInt(document.getElementById('calcDays').value, 10);
+      const persons = parseInt(document.getElementById('calcPersons').value, 10);
+
+      let multiplier = 1.0;
+      if (style === 'budget') multiplier = 0.65;
+      if (style === 'luxury') multiplier = 2.1;
+
+      const baseDailyPerPerson = currentModalDest.estimatedBudget / currentModalDest.durationDays;
+      const totalBudget = Math.round(baseDailyPerPerson * days * persons * multiplier);
+
+      const stay = Math.round(totalBudget * 0.42);
+      const food = Math.round(totalBudget * 0.28);
+      const transit = Math.round(totalBudget * 0.18);
+      const activities = totalBudget - (stay + food + transit);
+
+      document.getElementById('costStay').innerText = `₹${stay.toLocaleString('en-IN')}`;
+      document.getElementById('costFood').innerText = `₹${food.toLocaleString('en-IN')}`;
+      document.getElementById('costTransit').innerText = `₹${transit.toLocaleString('en-IN')}`;
+      document.getElementById('costActivity').innerText = `₹${activities.toLocaleString('en-IN')}`;
+      document.getElementById('costTotal').innerText = `₹${totalBudget.toLocaleString('en-IN')}`;
+    }
+
+    /* ========================================================
+       6. AI RECOMMENDATION ENGINE (Weighted Multi-Attribute)
+       ======================================================== */
+    function handlePlannerSubmit(e) {
+      e.preventDefault();
+
+      const type = document.getElementById('planType').value;
+      const season = document.getElementById('planSeason').value;
+      const userBudget = parseFloat(document.getElementById('planMaxBudget').value) || 20000;
+
+      const prefPeaceful = document.getElementById('prefPeaceful').checked;
+      const prefAdventure = document.getElementById('prefAdventure').checked;
+      const prefGreenery = document.getElementById('prefGreenery').checked;
+      const prefHeritage = document.getElementById('prefHeritage').checked;
+      const prefFamily = document.getElementById('prefFamily').checked;
+
+      // Score each destination
+      const scored = DESTINATIONS.map(dest => {
+        let score = 0;
+        let reasons = [];
+
+        // 1. Destination Category (35%)
+        if (type === 'any') {
+          score += 28;
+        } else if (dest.category.toLowerCase() === type.toLowerCase()) {
+          score += 35;
+          reasons.push(`Direct category match for ${dest.category}.`);
+        } else {
+          score += 8;
+        }
+
+        // 2. Budget Compatibility (25%)
+        if (dest.estimatedBudget <= userBudget) {
+          score += 25;
+          reasons.push(`Estimated base budget ₹${dest.estimatedBudget.toLocaleString('en-IN')} fits comfortably inside ₹${userBudget.toLocaleString('en-IN')}.`);
+        } else {
+          const ratio = userBudget / dest.estimatedBudget;
+          score += Math.max(0, ratio * 20);
+        }
+
+        // 3. Season Compatibility (20%)
+        if (season === 'any' || dest.seasonCategory.includes(season)) {
+          score += 20;
+          reasons.push(`Prime travel season during ${season}.`);
+        } else {
+          score += 6;
+        }
+
+        // 4. Vibes & Tags (20%)
+        let checks = 0, matches = 0;
+        if (prefPeaceful) { checks++; if (dest.tags.includes('peaceful')) matches++; }
+        if (prefAdventure) { checks++; if (dest.tags.includes('adventure')) matches++; }
+        if (prefGreenery) { checks++; if (dest.tags.includes('greenery')) matches++; }
+        if (prefHeritage) { checks++; if (dest.tags.includes('heritage')) matches++; }
+        if (prefFamily) { checks++; if (dest.tags.includes('family')) matches++; }
+
+        if (checks > 0) {
+          score += Math.round((matches / checks) * 20);
+        } else {
+          score += 15;
+        }
+
+        const matchPercent = Math.min(99, Math.max(65, Math.round(score)));
+        return { ...dest, matchScore: matchPercent, matchReasons: reasons };
+      });
+
+      scored.sort((a, b) => b.matchScore - a.matchScore);
+      const top3 = scored.slice(0, 3);
+
+      renderRecommendations(top3);
+    }
+
+    function renderRecommendations(list) {
+      const recGrid = document.getElementById('recGrid');
+      recGrid.innerHTML = '';
+
+      list.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.className = 'destination-card';
+        card.innerHTML = `
+          <div class="card-img-wrap">
+            <span class="card-tag">#${idx + 1} Best Match</span>
+            <img src="${item.image}" alt="${item.name}">
+            <div style="position:absolute; bottom:10px; right:10px; background:var(--accent-lime); color:var(--primary-dark); font-weight:700; font-size:0.75rem; padding:4px 8px; border-radius:var(--radius-full);">
+              ${item.matchScore}% Match
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="card-title-row">
+              <h3 class="card-title">${item.name}</h3>
+              <div class="rating-badge"><i class="fa-solid fa-star"></i> ${item.rating}</div>
+            </div>
+            <div class="card-location"><i class="fa-solid fa-location-dot"></i> ${item.state}</div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px; line-height:1.4;">${item.matchReasons.join(' ')}</p>
+            <div class="card-meta-row">
+              <span>Budget: <strong>₹${item.estimatedBudget.toLocaleString('en-IN')}</strong></span>
+              <span>${item.duration}</span>
+            </div>
+            <div class="card-actions">
+              <button class="btn-card-details" onclick="openDestinationDetails('${item.id}')">View Details & Map</button>
+            </div>
+          </div>
+        `;
+        recGrid.appendChild(card);
+      });
+
+      document.getElementById('recSection').style.display = 'block';
+      document.getElementById('recSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    /* ========================================================
+       7. CATALOG RENDERING & MODAL NAVIGATION
+       ======================================================== */
+    function renderCatalog(items) {
+      const grid = document.getElementById('destCatalogGrid');
+      grid.innerHTML = '';
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'destination-card';
+        card.innerHTML = `
+          <div class="card-img-wrap">
+            <span class="card-tag">${item.category}</span>
+            <button class="card-fav-btn" onclick="toggleFav(this, '${item.id}')" aria-label="Save"><i class="fa-solid fa-heart"></i></button>
+            <img src="${item.image}" alt="${item.name}">
+          </div>
+          <div class="card-body">
+            <div class="card-title-row">
+              <h3 class="card-title">${item.name}</h3>
+              <div class="rating-badge"><i class="fa-solid fa-star"></i> ${item.rating}</div>
+            </div>
+            <div class="card-location"><i class="fa-solid fa-location-dot"></i> ${item.state}</div>
+            <div class="card-meta-row">
+              <span>Budget: <strong>₹${item.estimatedBudget.toLocaleString('en-IN')}</strong></span>
+              <span>${item.duration}</span>
+            </div>
+            <div class="card-actions">
+              <button class="btn-card-details" onclick="openDestinationDetails('${item.id}')">Explore & Route</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterByCategory(cat, elem) {
+      document.querySelectorAll('.category-pill').forEach(p => p.classList.remove('active'));
+      if (elem) elem.classList.add('active');
+
+      if (cat === 'All') {
+        renderCatalog(DESTINATIONS);
+      } else {
+        const filtered = DESTINATIONS.filter(d => d.category.toLowerCase() === cat.toLowerCase());
+        renderCatalog(filtered);
+      }
+    }
+
+    function handleDestSearch(query) {
+      const q = query.toLowerCase().trim();
+      const filtered = DESTINATIONS.filter(d => 
+        d.name.toLowerCase().includes(q) || d.state.toLowerCase().includes(q)
+      );
+      renderCatalog(filtered);
+    }
+
+    function toggleFav(btn, id) {
+      btn.classList.toggle('active');
+    }
+
+    function openDestinationDetails(id) {
+      const dest = DESTINATIONS.find(d => d.id === id);
+      if (!dest) return;
+      currentModalDest = dest;
+
+      document.getElementById('mCoverImg').src = dest.image;
+      document.getElementById('mCategoryTag').innerText = dest.category;
+      document.getElementById('mTitle').innerText = dest.name;
+      document.getElementById('mSubtitle').innerHTML = `<i class="fa-solid fa-location-dot"></i> ${dest.state}, India`;
+      document.getElementById('mDescription').innerText = dest.description;
+      document.getElementById('mBestSeason').innerText = dest.bestSeason;
+      document.getElementById('mDuration').innerText = dest.duration;
+      document.getElementById('mBaseBudget').innerText = `₹${dest.estimatedBudget.toLocaleString('en-IN')} (Estimated Base)`;
+
+      // Attractions
+      const attrList = document.getElementById('mAttractionsList');
+      attrList.innerHTML = '';
+      dest.attractions.forEach(a => {
+        const li = document.createElement('li');
+        li.innerText = a;
+        attrList.appendChild(li);
+      });
+
+      // Local Specialty Dishes
+      const dishesGrid = document.getElementById('specialtyDishesGrid');
+      dishesGrid.innerHTML = '';
+      dest.specialties.forEach(dish => {
+        const dCard = document.createElement('div');
+        dCard.className = 'food-card';
+        dCard.innerHTML = `
+          <span class="dish-tag">${dish.type}</span>
+          <h5 style="margin:4px 0; font-size:0.95rem; color:var(--primary-dark); font-weight:700;">${dish.name}</h5>
+          <p style="font-size:0.8rem; color:var(--text-muted);">${dish.desc}</p>
+          <div style="margin-top:6px; font-size:0.75rem; font-weight:600; color:var(--primary-mid);">Approx: ${dish.estPrice}</div>
+        `;
+        dishesGrid.appendChild(dCard);
+      });
+
+      // Reset Route Controls
+      document.getElementById('routeStartCity').value = '';
+      document.getElementById('routeResultCard').style.display = 'none';
+
+      // Recalculate default breakdown
+      recalculateCostBreakdown();
+
+      // Open Modal
+      document.getElementById('destModal').classList.add('active');
+
+      // Initialize OpenFreeMap / Leaflet
+      initOrUpdateLeafletMap(dest.coords, dest.name);
+
+      // Pre-query food spots
+      fetchNearbyFoodSpots(dest.coords);
+    }
+
+    function closeDestModal() {
+      document.getElementById('destModal').classList.remove('active');
+    }
+
+    function switchModalTab(tabId, btnElem) {
+      document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+      if (btnElem) btnElem.classList.add('active');
+      const target = document.getElementById(`tab-${tabId}`);
+      if (target) target.classList.add('active');
+
+      if (tabId === 'map-route') {
+        staggeredInvalidateMap();
+      }
+    }
+
+    /* ========================================================
+       8. FLOATING WANDERWISE AI AGENT
+       ======================================================== */
+    function toggleAIChat() {
+      const win = document.getElementById('aiChatWindow');
+      win.classList.toggle('active');
+    }
+
+    function handleSendChatMessage(e) {
+      e.preventDefault();
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      appendChatMessage(text, 'user');
+      input.value = '';
+
+      setTimeout(() => {
+        const botReply = generateAgentResponse(text);
+        appendChatMessage(botReply, 'bot');
+      }, 450);
+    }
+
+    function appendChatMessage(msg, sender) {
+      const body = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.className = `chat-msg ${sender}`;
+      div.innerHTML = msg.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+      body.appendChild(div);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function generateAgentResponse(userQuery) {
+      const q = userQuery.toLowerCase();
+
+      if (q.includes('budget') || q.includes('cost') || q.includes('cheap') || q.includes('under') || q.includes('₹')) {
+        return "For budget getaways under ₹15,000, I recommend **Mahabaleshwar** (approx ₹14,000) or **Matheran** (approx ₹9,500) for hill station greenery, or **Rishikesh** (approx ₹16,000) for adventure rafting camps. What is your preferred budget range?";
+      }
+      if (q.includes('food') || q.includes('eat') || q.includes('dish') || q.includes('cuisine')) {
+        return "Every destination in our catalog features iconic culinary highlights!\n• **Mahabaleshwar**: Fresh Strawberry Cream & Pithla Bhakri\n• **Goa**: Goan Fish Curry Thali & Bebinca\n• **Jaipur**: Dal Baati Churma & Pyaaz Kachori\n• **Manali**: Himachali Siddu & Grilled Himalayan Trout\nWhich place's dining scene would you like to explore?";
+      }
+      if (q.includes('route') || q.includes('drive') || q.includes('distance') || q.includes('map')) {
+        return "You can calculate shortest driving routes to any destination! Open any card, click **Interactive Map & Route**, enter your starting city (or click *Use GPS*), and our OSRM routing engine plots the exact road line with driving time and distance.";
+      }
+      if (q.includes('snow') || q.includes('mountain') || q.includes('winter') || q.includes('trek')) {
+        return "For snowscapes, pine valleys, and mountain adventures, **Manali** in Himachal Pradesh is unbeatable from December to February. Would you like a 3-day or 5-day itinerary?";
+      }
+      if (q.includes('beach') || q.includes('sea') || q.includes('coastal')) {
+        return "For beaches, colonial architecture, and coastal seafood, **Goa** is ideal with an estimated base budget of ₹22,000. Would you prefer North Goa water sports or South Goa peaceful sands?";
+      }
+      return "I can help you filter destinations, analyze trip expenditure budgets, calculate shortest road routes, or locate nearby food spots. Tell me where you are dreaming of traveling!";
+    }
+
+    function focusDestinationSearch() {
+      document.getElementById('destinations-section').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('destSearchInput').focus();
+    }
+
+    // Initialize Default View
+    window.addEventListener('DOMContentLoaded', () => {
+      renderCatalog(DESTINATIONS);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeDestModal();
+        const chatWin = document.getElementById('aiChatWindow');
+        if (chatWin.classList.contains('active')) chatWin.classList.remove('active');
+      }
+    });
+  </script>
+</body>
+</html>
